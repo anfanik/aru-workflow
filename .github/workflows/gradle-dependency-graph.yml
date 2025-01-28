@@ -1,0 +1,45 @@
+name: Gradle Dependency Graph
+
+on:
+  workflow_call:
+    inputs:
+      jdk_version:
+        description: "JDK version"
+        type: number
+        required: true
+      jdk_distribution:
+        description: "JVM distribution"
+        type: string
+        required: true
+
+jobs:
+  generate-dependency-graph:
+    name: Generate Dependency Graph
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout
+
+      - uses: actions/setup-java@v4
+        name: Set up JDK
+        with:
+          java-version: ${{ inputs.jdk_version }}
+          distribution: ${{ inputs.jdk_distribution }}
+
+      - uses: gradle/actions/setup-gradle@v4
+        name: Set up Gradle
+        with:
+          dependency-graph: generate-and-submit
+
+      - name: Generate Dependency Graph
+        run: ./gradlew dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
+          GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: ${{ github.repository }}
+          GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.ref }}
+          GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.sha }}
+          GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}

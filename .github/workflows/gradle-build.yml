@@ -1,4 +1,4 @@
-name: Gradle
+name: Gradle Build
 
 on:
   workflow_call:
@@ -37,19 +37,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         name: Set up Gradle
-        with:
-          dependency-graph: generate-and-submit
-          dependency-graph-continue-on-failure: true
 
       - name: Build binary
         run: ./gradlew build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
-          GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: ${{ github.repository }}
-          GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.ref }}
-          GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.sha }}
-          GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}
 
       - uses: actions/upload-artifact@v4
         name: Upload build artifacts
