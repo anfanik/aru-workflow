@@ -1,4 +1,4 @@
-name: Gradle
+name: Gradle Publish
 
 on:
   workflow_call:
@@ -12,6 +12,12 @@ on:
         type: string
         required: true
 
+      publish_to_maven_github_packages:
+        description: "Is Maven Repository GitHub Packages"
+        type: boolean
+        required: false
+        default: false
+
       binaries_artifact_name:
         description: "Binaries artifact name"
         type: string
@@ -19,9 +25,10 @@ on:
         default: binaries
 
 jobs:
-  build-binary:
-    name: Build binary
+  publish-to-maven:
+    name: Publish to Maven
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
       packages: write
@@ -29,6 +36,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         name: Checkout
+
+      - uses: actions/download-artifact@v4
+        name: Download build artifacts
+        with:
+          name: ${{ inputs.binaries_artifact_name }}
+          path: build/libs
 
       - uses: actions/setup-java@v4
         name: Set up JDK
@@ -38,22 +51,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         name: Set up Gradle
-        with:
-          dependency-graph: generate-and-submit
-          dependency-graph-continue-on-failure: true
 
-      - name: Build binary
-        run: ./gradlew build
+      - name: Publish to Maven
+        run: ./gradlew publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
-          GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: ${{ github.repository }}
-          GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.ref }}
-          GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.sha }}
-          GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}
-
-      - uses: actions/upload-artifact@v4
-        name: Upload build artifacts
-        with:
-          name: ${{ inputs.binaries_artifact_name }}
-          path: build/libs
+          GITHUB_TOKEN: ${{ inputs.publish_to_maven_github_packages && secrets.GITHUB_TOKEN || '' }}
