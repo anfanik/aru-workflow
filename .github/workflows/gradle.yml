@@ -12,11 +12,6 @@ on:
         type: string
         required: true
 
-      dependency_graph_job_correlator:
-        description: "Dependency Graph job correlator"
-        type: string
-        required: true
-
       publish_to_maven:
         description: "Is Publish to Maven Repository?"
         type: boolean
