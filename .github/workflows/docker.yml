@@ -68,15 +68,15 @@ jobs:
             exit 1
           fi  
 
+      - uses: actions/checkout@v4
+        name: Checkout
+
       - uses: actions/download-artifact@v4
         name: Download artifact
         if: ${{ inputs.download_artifact }}
         with:
           name: ${{ inputs.download_artifact_name }}
           path: ${{ inputs.download_artifact_path }}
-
-      - uses: actions/checkout@v4
-        name: Checkout
 
       - name: Prepare Build Image
         run: |
