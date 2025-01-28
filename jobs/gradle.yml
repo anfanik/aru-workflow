@@ -1,0 +1,82 @@
+name: Gradle
+
+on:
+  workflow_call:
+    inputs:
+      jdk_version:
+        description: "JDK version"
+        type: number
+        required: true
+      jdk_distribution:
+        description: "JVM distribution"
+        type: string
+        required: true
+
+      dependency_graph_job_correlator:
+        description: "Dependency Graph job correlator"
+        type: string
+        required: true
+
+      publish_to_maven:
+        description: "Is Publish to Maven Repository?"
+        type: boolean
+        required: false
+        default: false
+      publish_to_maven_github_packages:
+        description: "Is Maven Repository GitHub Packages"
+        type: boolean
+        required: false
+        default: false
+
+      binaries_artifact_name:
+        description: "Binaries artifact name"
+        type: string
+        required: false
+        default: binaries
+
+jobs:
+  build-application:
+    name: Build binary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout
+
+      - uses: actions/setup-java@v4
+        name: Set up JDK
+        with:
+          java-version: ${{ inputs.jdk_version }}
+          distribution: ${{ inputs.jdk_distribution }}
+
+      - uses: gradle/actions/setup-gradle@v4
+        name: Set up Gradle
+        with:
+          dependency-graph: generate-and-submit
+          dependency-graph-continue-on-failure: true
+
+      - name: Build binary
+        run: ./gradlew build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
+          GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: ${{ github.repository }}
+          GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.ref }}
+          GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.sha }}
+          GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}
+
+      - name: Publish to Maven
+        if: ${{ inputs.publish_to_maven }}
+        run: ./gradlew publish
+        env:
+          GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+          GITHUB_TOKEN: ${{ inputs.publish_to_maven_github_packages && secrets.GITHUB_TOKEN || '' }}
+
+      - uses: actions/upload-artifact@v4
+        name: Upload build artifacts
+        with:
+          name: ${{ inputs.binaries_artifact_name }}
+          path: build/libs
