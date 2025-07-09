@@ -52,6 +52,59 @@ on:
         required: false
 
 jobs:
+  build-n-push-image:
+    name: Build and Push image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Validate Download Artifact inputs
+        if: ${{ inputs.download_artifact }}
+        run: |
+          if [ -z "${{ inputs.download_artifact_name }}" ] || [ -z "${{ inputs.download_artifact_path }}" ]; then
+            echo "Error: download_artifact_name and download_artifact_path inputs are required on enabled download_artifact input."
+            exit 1
+          fi  
+
+      - uses: actions/checkout@v4
+        name: Checkout
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - uses: actions/download-artifact@v4
+        name: Download artifact
+        if: ${{ inputs.download_artifact }}
+        with:
+          name: ${{ inputs.download_artifact_name }}
+          path: ${{ inputs.download_artifact_path }}
+
+      - name: Build and push multi-arch image
+        run: |
+          IMAGE_NAME=${{ inputs.image_name }}
+          echo "Image Name: $IMAGE_NAME"
+          
+          IMAGE_VERSION=${{ inputs.image_version }}
+          echo "Image Version: $IMAGE_VERSION"
+          
+          IMAGE_TAG=$IMAGE_NAME:$IMAGE_VERSION
+          echo "Image Tag: $IMAGE_TAG"
+          
+          echo "GitHub run ID: $GITHUB_RUN_ID"
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --file Dockerfile \
+            --tag $IMAGE_TAG \
+            --label "github_actions_run=$GITHUB_RUN_ID"
+            --push \
+            .
+  
   build-image:
     name: Build image
     runs-on: ubuntu-latest
