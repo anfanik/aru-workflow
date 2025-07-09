@@ -103,6 +103,5 @@ jobs:
             --platform linux/amd64,linux/arm64 \
             --file $DOCKERFILE \
             --tag $IMAGE_TAG \
-            --label "github_actions_run=$GITHUB_RUN_ID" \
             --push \
             .
