@@ -81,6 +81,10 @@ jobs:
 
       - name: Log in to registry
         run: |
+          DOCKER_REGISTRY=${{ inputs.publish_image_registry }}
+          echo "Docker Registry: $DOCKER_REGISTRY"
+          echo "DOCKER_REGISTRY=$DOCKER_REGISTRY" >> $GITHUB_ENV
+
           REGISTRY_TOKEN=${{ secrets.publish_image_registry_token }}
           if [ -n "$REGISTRY_TOKEN" ]; then
             echo "Docker Registry token is provided, trying to log in"
@@ -97,9 +101,6 @@ jobs:
           IMAGE_VERSION=${{ inputs.image_version }}
           echo "Image Version: $IMAGE_VERSION"
 
-          DOCKER_REGISTRY=${{ inputs.publish_image_registry }}
-          echo "Docker Registry: $DOCKER_REGISTRY"
-          
           IMAGE_TAG="$DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_VERSION"
           IMAGE_TAG=$(echo $IMAGE_TAG | tr '[A-Z]' '[a-z]')
           echo "Image Tag: $IMAGE_TAG"
