@@ -79,6 +79,16 @@ jobs:
           name: ${{ inputs.download_artifact_name }}
           path: ${{ inputs.download_artifact_path }}
 
+      - name: Log in to registry
+        run: |
+          REGISTRY_TOKEN=${{ secrets.publish_image_registry_token }}
+          if [ -n "$REGISTRY_TOKEN" ]; then
+            echo "Docker Registry token is provided, trying to log in"
+            echo "$REGISTRY_TOKEN" | docker login $DOCKER_REGISTRY -u nologin --password-stdin
+          else
+            echo "Docker Registry token is not provided, logging in is not needed"
+          fi
+
       - name: Build and push multi-arch image
         run: |
           IMAGE_NAME=${{ inputs.image_name }}
@@ -103,5 +113,6 @@ jobs:
             --platform linux/amd64,linux/arm64 \
             --file $DOCKERFILE \
             --tag $IMAGE_TAG \
+            --label github_actions_run=$GITHUB_RUN_ID \
             --push \
             .
